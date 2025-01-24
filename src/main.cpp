@@ -1,12 +1,15 @@
 
 #include "main.h"
 #include "lemlib/api.hpp" // IWYU pragma: keep
+#include "pros/motors.h"
 #include "pros/rotation.hpp"
 pros::MotorGroup left({-1,-2,-3});
 pros::MotorGroup right({13,12,18});
-pros::adi::Pneumatics clamp1('a',false);
-pros::adi::Pneumatics clamp2('b',false);
+pros::adi::Pneumatics clamp1('a',true);
+pros::adi::Pneumatics clamp2('b',true);
 pros::Motor babybrown(5);
+pros::Motor intake(11);
+pros::Motor convey(14);
 lemlib::Drivetrain drivetrain(&left, // left motor group
                               &right, // right motor group
                               10, // 10 inch track width
@@ -35,7 +38,7 @@ lemlib::ControllerSettings lateral_controller(20, // proportional gain (kP)
                                               100, // small error range timeout, in milliseconds
                                               3, // large error range, in inches
                                               500, // large error range timeout, in milliseconds
-                                              20 // maximum acceleration (slew)
+                                              90 // maximum acceleration (slew)
 );
 
 // angular PID controller
@@ -47,7 +50,7 @@ lemlib::ControllerSettings angular_controller(2.3, // proportional gain (kP)
                                               100, // small error range timeout, in milliseconds
                                               3, // large error range, in degrees
                                               500, // large error range timeout, in milliseconds
-                                              0 // maximum acceleration (slew)
+                                              90 // maximum acceleration (slew)
 );
 lemlib::Chassis chassis(drivetrain, // drivetrain settings
                         lateral_controller, // lateral PID settings
@@ -117,29 +120,47 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
+    babybrown.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     chassis.setPose(0,0,0);
     clamp1.extend();
     clamp2.extend();
     chassis.moveToPose(0,-18.7,0,2000,{.forwards=false});
-    chassis.turnToHeading(-90, 2000);
+    chassis.turnToHeading(-90, 1000);
     chassis.waitUntilDone();
-    chassis.moveToPose(-8.25, -16, -90, 2000,{.forwards=true});
-    chassis.turnToHeading(-90, 2000);
+    chassis.moveToPose(-8.25, -16, -90, 1000,{.forwards=true});
+    chassis.turnToHeading(-90, 500);
 	babybrown.move(-70);
-	pros::delay(400);
-	babybrown.brake();
+    pros::delay(500);
+    babybrown.brake();
 	pros::delay(700);
 	babybrown.move(70);
 	pros::delay(400);
 	babybrown.brake();
 	pros::delay(1000);
     chassis.setPose(0,0,0);
-    chassis.moveToPose(0,-7,0,2000);
-    chassis.turnToHeading(-40, 3000);
+    chassis.moveToPose(0,-7,0,500);
+    chassis.turnToHeading(-40, 1000);
     chassis.setPose(0,0,40);
-    chassis.moveToPose(0, -33, 0, 3000,{.forwards=false});
+    chassis.moveToPose(0, -35, 0, 2000,{.forwards=false});
+    chassis.waitUntilDone();
+    pros::delay(500);
     clamp1.retract();
     clamp2.retract();
+    pros::delay(800);
+
+    chassis.turnToHeading(230,1000);
+    chassis.setPose(0,0,220);
+    babybrown.move(-100);
+    pros::delay(300);
+    babybrown.brake();
+    intake.move(100)&&convey.move(-100);
+    chassis.moveToPose(0, 70, 0, 2000,{.forwards=true});
+    chassis.waitUntilDone();
+    pros::delay(300);
+    chassis.moveToPose(0,-5,0,2000,{.forwards=false});
+    
+    
+
 
 
     
